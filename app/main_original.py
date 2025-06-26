@@ -54,14 +54,14 @@ from app.services.integrations.jd_quote_integration_service import JDQuoteIntegr
 # View Module Imports
 from app.views.modules.home_page_dashboard_view import HomePageDashboardView
 from app.views.modules.deal_form_view import DealFormView
-# from app.views.modules.get_quotes_view import GetQuotesView # Not in required_module_keys
+from app.views.modules.get_quotes_view import GetQuotesView
 from app.views.modules.recent_deals_view import RecentDealsView
 from app.views.modules.price_book_view import PriceBookView
-# from app.views.modules.used_inventory_view import UsedInventoryView # Not in required_module_keys
-# from app.views.modules.receiving_view import ReceivingView # Not in required_module_keys
-# from app.views.modules.csv_editors_manager_view import CsvEditorsManagerView # Not in required_module_keys
-# from app.views.modules.jd_external_quote_view import JDExternalQuoteView # Not in required_module_keys
-# from app.views.modules.invoice_module_view import InvoiceModuleView # Not in required_module_keys
+from app.views.modules.used_inventory_view import UsedInventoryView
+from app.views.modules.receiving_view import ReceivingView
+from app.views.modules.csv_editors_manager_view import CsvEditorsManagerView
+from app.views.modules.jd_external_quote_view import JDExternalQuoteView
+from app.views.modules.invoice_module_view import InvoiceModuleView
 
 # Settings Panels
 from app.views.settings_panels.app_settings_view import AppSettingsView
@@ -422,40 +422,19 @@ class MainWindow(QMainWindow):
 
            self._preload_module_icons()
 
-           # Define all possible modules and their factory methods/display names
-           all_modules_config = {
-               "home_dashboard": (self._create_home_page_dashboard_view, "Home Dashboard"),
-               "deal_form": (self._create_deal_form_view, "New Deal"),
-               "get_quotes": (self._create_get_quotes_view, "Get Quotes"),
-               "recent_deals": (self._create_recent_deals_view, "Recent Deals"),
-               "price_book": (self._create_price_book_view, "Price Book"),
-               "used_inventory": (self._create_used_inventory_view, "Used Inventory"),
-               "receiving": (self._create_receiving_view, "Receiving"),
-               "csv_editors": (self._create_csv_editors_view, "Data Editors"),
-               "jd_quote": (self._create_jd_quote_view, "JD External Quote"),
-               "invoice": (self._create_invoice_view, "Invoice"),
-               "app_settings": (self._create_app_settings_view, "App Settings"),
-           }
-
-           # Specify the module keys for the desired distribution
-           # Kept "home_dashboard" as a sensible landing page
-           # Kept "app_settings" for basic configurations
-           required_module_keys = [
-               "home_dashboard",
-               "deal_form",       # User request: New Deal
-               "recent_deals",    # User request: Recent Deals
-               "price_book",      # User request: Price Book
-               "app_settings"
+           modules_to_load = [
+               ("home_dashboard", self._create_home_page_dashboard_view, "Home Dashboard"),
+               ("deal_form", self._create_deal_form_view, "New Deal"),
+               ("get_quotes", self._create_get_quotes_view, "Get Quotes"),
+               ("recent_deals", self._create_recent_deals_view, "Recent Deals"),
+               ("price_book", self._create_price_book_view, "Price Book"),
+               ("used_inventory", self._create_used_inventory_view, "Used Inventory"),
+               ("receiving", self._create_receiving_view, "Receiving"),
+               ("csv_editors", self._create_csv_editors_view, "Data Editors"),
+               ("jd_quote", self._create_jd_quote_view, "JD External Quote"),
+               ("invoice", self._create_invoice_view, "Invoice"),
+               ("app_settings", self._create_app_settings_view, "App Settings"),
            ]
-
-           modules_to_load = []
-           for key in required_module_keys:
-               if key in all_modules_config:
-                   factory, display_name = all_modules_config[key]
-                   modules_to_load.append((key, factory, display_name))
-               else:
-                   # This case should ideally not happen if keys are correctly defined
-                   self.logger.warning(f"Module key '{key}' defined in required_module_keys was not found in all_modules_config.")
 
            loaded_modules = 0
            for module_key, module_factory, display_name in modules_to_load:
@@ -473,7 +452,7 @@ class MainWindow(QMainWindow):
                except Exception as e:
                    self.logger.error(f"Failed to load module '{module_key}': {e}", exc_info=True)
 
-           self.logger.info(f"Loaded {loaded_modules}/{len(required_module_keys)} modules successfully") # Corrected total module count
+           self.logger.info(f"Loaded {loaded_modules}/{len(modules_to_load)} modules successfully")
 
            self._set_default_view()
 
@@ -549,72 +528,72 @@ class MainWindow(QMainWindow):
            self.logger.error(f"Failed to create PriceBookView: {e}", exc_info=True)
            return None
 
-   # def _create_used_inventory_view(self) -> Optional[UsedInventoryView]:
-   #     """Create used inventory view with error handling"""
-   #     try:
-   #         return UsedInventoryView(
-   #             config=self.config,
-   #             main_window=self,
-   #             sharepoint_manager=self.sharepoint_manager_service,
-   #             logger_instance=logging.getLogger("UsedInventoryViewLogger")
-   #         )
-   #     except Exception as e:
-   #         self.logger.error(f"Failed to create UsedInventoryView: {e}", exc_info=True)
-   #         return None
+   def _create_used_inventory_view(self) -> Optional[UsedInventoryView]:
+       """Create used inventory view with error handling"""
+       try:
+           return UsedInventoryView(
+               config=self.config,
+               main_window=self,
+               sharepoint_manager=self.sharepoint_manager_service,
+               logger_instance=logging.getLogger("UsedInventoryViewLogger")
+           )
+       except Exception as e:
+           self.logger.error(f"Failed to create UsedInventoryView: {e}", exc_info=True)
+           return None
 
-   # def _create_receiving_view(self) -> Optional[ReceivingView]:
-   #     """Create receiving view with error handling"""
-   #     try:
-   #         return ReceivingView(
-   #             config=self.config,
-   #             logger_instance=logging.getLogger("ReceivingViewLogger"),
-   #             thread_pool=self.task_manager.thread_pool if hasattr(self.task_manager, 'thread_pool') else QThreadPool.globalInstance(),
-   #             notification_manager=None,
-   #             main_window=self
-   #         )
-   #     except Exception as e:
-   #         self.logger.error(f"Failed to create ReceivingView: {e}", exc_info=True)
-   #         return None
+   def _create_receiving_view(self) -> Optional[ReceivingView]:
+       """Create receiving view with error handling"""
+       try:
+           return ReceivingView(
+               config=self.config,
+               logger_instance=logging.getLogger("ReceivingViewLogger"),
+               thread_pool=self.task_manager.thread_pool if hasattr(self.task_manager, 'thread_pool') else QThreadPool.globalInstance(),
+               notification_manager=None,
+               main_window=self
+           )
+       except Exception as e:
+           self.logger.error(f"Failed to create ReceivingView: {e}", exc_info=True)
+           return None
 
-   # def _create_csv_editors_view(self) -> Optional[CsvEditorsManagerView]:
-   #     """Create CSV editors view with error handling"""
-   #     try:
-   #         return CsvEditorsManagerView(
-   #             config=self.config,
-   #             main_window=self,
-   #             logger_instance=logging.getLogger("CsvEditorsManagerLogger")
-   #         )
-   #     except Exception as e:
-   #         self.logger.error(f"Failed to create CsvEditorsManagerView: {e}", exc_info=True)
-   #         return None
+   def _create_csv_editors_view(self) -> Optional[CsvEditorsManagerView]:
+       """Create CSV editors view with error handling"""
+       try:
+           return CsvEditorsManagerView(
+               config=self.config,
+               main_window=self,
+               logger_instance=logging.getLogger("CsvEditorsManagerLogger")
+           )
+       except Exception as e:
+           self.logger.error(f"Failed to create CsvEditorsManagerView: {e}", exc_info=True)
+           return None
 
-   # def _create_jd_quote_view(self) -> Optional[JDExternalQuoteView]:
-   #     """Create JD external quote view with error handling"""
-   #     try:
-   #         return JDExternalQuoteView(
-   #             config=self.config,
-   #             main_window=self,
-   #             jd_quote_integration_service=self.jd_quote_integration_service,
-   #             auth_manager=self.jd_auth_manager_service,
-   #             logger_instance=logging.getLogger("JDExternalQuoteViewLogger")
-   #         )
-   #     except Exception as e:
-   #         self.logger.error(f"Failed to create JDExternalQuoteView: {e}", exc_info=True)
-   #         return None
+   def _create_jd_quote_view(self) -> Optional[JDExternalQuoteView]:
+       """Create JD external quote view with error handling"""
+       try:
+           return JDExternalQuoteView(
+               config=self.config,
+               main_window=self,
+               jd_quote_integration_service=self.jd_quote_integration_service,
+               auth_manager=self.jd_auth_manager_service,
+               logger_instance=logging.getLogger("JDExternalQuoteViewLogger")
+           )
+       except Exception as e:
+           self.logger.error(f"Failed to create JDExternalQuoteView: {e}", exc_info=True)
+           return None
 
-   # def _create_invoice_view(self) -> Optional[InvoiceModuleView]:
-   #     """Create invoice view with error handling"""
-   #     try:
-   #         return InvoiceModuleView(
-   #             config=self.config,
-   #             main_window=self,
-   #             jd_quote_integration_service=self.jd_quote_integration_service,
-   #             auth_manager=self.jd_auth_manager_service,
-   #             logger_instance=logging.getLogger("InvoiceModuleViewLogger")
-   #         )
-   #     except Exception as e:
-   #         self.logger.error(f"Failed to create InvoiceModuleView: {e}", exc_info=True)
-   #         return None
+   def _create_invoice_view(self) -> Optional[InvoiceModuleView]:
+       """Create invoice view with error handling"""
+       try:
+           return InvoiceModuleView(
+               config=self.config,
+               main_window=self,
+               jd_quote_integration_service=self.jd_quote_integration_service,
+               auth_manager=self.jd_auth_manager_service,
+               logger_instance=logging.getLogger("InvoiceModuleViewLogger")
+           )
+       except Exception as e:
+           self.logger.error(f"Failed to create InvoiceModuleView: {e}", exc_info=True)
+           return None
 
    def _create_home_page_dashboard_view(self) -> Optional[HomePageDashboardView]:
        """Create home page dashboard view with error handling"""
@@ -639,9 +618,9 @@ class MainWindow(QMainWindow):
            self.logger.error(f"Failed to create AppSettingsView: {e}", exc_info=True)
            return None
 
-   # def _create_get_quotes_view(self) -> Optional[GetQuotesView]:
-   #     """Create Get Quotes view with error handling"""
-   #     try:
+   def _create_get_quotes_view(self) -> Optional[GetQuotesView]:
+       """Create Get Quotes view with error handling"""
+       try:
            if not self.jd_quote_integration_service:
                self.logger.warning("JDQuoteIntegrationService not available for GetQuotesView.")
            return GetQuotesView(
